@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"bytes"
 	"encoding/binary"
+	"encoding/gob"
 )
 
 type Block struct {
@@ -21,10 +22,10 @@ type Block struct {
 }
 
 //创建一个区块
-func NewBlock(data string,prevHash []byte) *Block {
+func NewBlock(data string, prevHash []byte) *Block {
 	block := Block{
 		Version:   00,
-		PrevHash:prevHash,
+		PrevHash:  prevHash,
 		Merkle:    []byte{},
 		TimeStamp: uint64(time.Now().Unix()),
 		//难度和随机数先为空
@@ -35,35 +36,60 @@ func NewBlock(data string,prevHash []byte) *Block {
 	}
 	//生成自身hash
 	//block.SetHash()
-	pow:=NewProofOfWork(&block)
-	hash,nonce:=pow.CrashHash()
-	block.SelfHash=hash
-	block.Nonce=nonce
+	pow := NewProofOfWork(&block)
+	hash, nonce := pow.CrashHash()
+	block.SelfHash = hash
+	block.Nonce = nonce
 	return &block
 }
 
 //将属性中的uint64转换成[]byte，方便拼接生成hash
-func  Uint64ToByte(num uint64)[]byte {
+func Uint64ToByte(num uint64) []byte {
 	buffer := bytes.Buffer{}
 	err := binary.Write(&buffer, binary.BigEndian, num)
-     if err!=nil{
-     	panic(err)
-	 }
-	 return buffer.Bytes()
+	if err != nil {
+		panic(err)
+	}
+	return buffer.Bytes()
 }
 func (b *Block) SetHash() {
 	blockInfo := bytes.Join([][]byte{
-	Uint64ToByte(b.Version),
-	b.Merkle,
-	Uint64ToByte(b.TimeStamp),
-	Uint64ToByte(b.Difficulty),
-	Uint64ToByte(b.Nonce),
-	b.Data,
+		Uint64ToByte(b.Version),
+		b.Merkle,
+		Uint64ToByte(b.TimeStamp),
+		Uint64ToByte(b.Difficulty),
+		Uint64ToByte(b.Nonce),
+		b.Data,
 	}, []byte{})
-	hash:= sha256.Sum256(blockInfo)
-	b.SelfHash=hash[:]
+	hash := sha256.Sum256(blockInfo)
+	b.SelfHash = hash[:]
 }
+
 //创建一个创世区块
-func GenesisBlock() *Block{
-	return NewBlock("这是一个创世区块",[]byte{})
+func GenesisBlock() *Block {
+	return NewBlock("这是一个创世区块", []byte{})
+}
+
+//将区块信息序列化
+func (bc *Block) Serialize() []byte {
+	buffer := bytes.Buffer{}
+	//创建编码器
+	encoder := gob.NewEncoder(&buffer)
+	err := encoder.Encode(&bc)
+	if err != nil {
+		panic(err)
+	}
+	return buffer.Bytes()
+}
+
+//将区块信息反序列化
+func Deserialize(blockData []byte) *Block{
+	//创建解码器
+	decoder:=gob.NewDecoder(bytes.NewReader(blockData))
+	var block Block
+	err:=decoder.Decode(&block)
+	if err!=nil{
+		panic(err)
+	}
+	return &block
 }
