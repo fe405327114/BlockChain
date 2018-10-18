@@ -47,6 +47,7 @@ func (pow *ProofOfWork)CrashHash()([]byte,uint64){
 }
 func(pow *ProofOfWork) JoinHash(nonce uint64)[]byte{
  var block =pow.block
+ block.Merkle=block.MerkleRootHash()
 	blockInfo := bytes.Join([][]byte{
 		Uint64ToByte(block.Version),
 		block.PrevHash,
@@ -54,7 +55,7 @@ func(pow *ProofOfWork) JoinHash(nonce uint64)[]byte{
 		Uint64ToByte(block.TimeStamp),
 		Uint64ToByte(block.Difficulty),
 		Uint64ToByte(nonce),
-		block.Data,
+		//block.Data,
 	}, []byte{})
 	hash:=sha256.Sum256(blockInfo)
 	return hash[:]
