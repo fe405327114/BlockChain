@@ -3,6 +3,7 @@ package main
 import (
 	"BlockChain/bolt"
 	"log"
+	"fmt"
 )
 
 //定义一个区块链结构
@@ -18,7 +19,7 @@ const blockBucket = "blockBucket"
 
 //创建一个区块链
 //创世块信息
-const genesisInfo = "genesis block"
+const genesisInfo = "genisis block"
 
 func NewBlockChain(address string) *BlockChain {
 	//打开数据库
@@ -93,9 +94,22 @@ func (bc *BlockChain) AllTransOfUtxo(address string) []Transaction {
 	for {
 		block := iterator.Next()
 		//遍历区块中的交易
-		output:
 		for _, tx := range block.Transaction {
+			//遍历所有的input
+			if !tx.IsCoinBase() {
+				for _, input := range tx.Inputs {
+					//检查当前的input是否是由该地址产生
+					if input.UnlockedBy(address) {
+						//如果是，则将input中的output标记添加进已花费的utxo中
+						fmt.Println("2222222222222")
+						spentUtxo[string(input.Txid)] = append(spentUtxo[string(input.Txid)], input.PayIndex)
+					}
+				}
+			}else {
+				fmt.Printf("这是挖矿交易:%s\n",tx.TxId)
+			}
 			//遍历所有的output，收款信息
+		output:
 			for outputIndex, output := range tx.Outputs {
 				//过滤掉该交易中已经花费过的output
 				if spentUtxo[string(tx.TxId)]!=nil{
@@ -111,21 +125,12 @@ func (bc *BlockChain) AllTransOfUtxo(address string) []Transaction {
 				}
 			}
 
-			//遍历所有的input
-			if !tx.IsCoinBase() {
-				for _, input := range tx.Inputs {
-					//检查当前的input是否是由该地址产生
-					if input.UnlockedBy(address) {
-						//如果是，则将input中的output标记添加进已花费的utxo中
-						spentUtxo[string(input.Txid)] = append(spentUtxo[string(input.Txid)], input.PayIndex)
-					}
-				}
-			}
 		}
 		if len(block.PrevHash) == 0 {
 			break
 		}
 	}
+	fmt.Println("spent:",spentUtxo)
 	return transactions
 }
 

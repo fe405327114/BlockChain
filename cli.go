@@ -16,6 +16,7 @@ addBlock --data DATA (add a block to the chain)
 getBalance  --address ADDRESS(get the balance)
 printChain  (print the blockchain)
 send from to amount miner data (send some coins to another)
+createWallet (create a new address)
 `
 
 func (cli *Cli) Run() {
@@ -50,6 +51,10 @@ func (cli *Cli) Run() {
 		miner:=args[5]
 		data:=args[6]
 		cli.Send(from,to,amount,miner,data)
+	case "createWallet":
+		cli.CreateWallet()
+	case "list":
+		cli.List()
 	default:
 		fmt.Println(Usage)
 	}

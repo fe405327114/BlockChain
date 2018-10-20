@@ -53,7 +53,7 @@ func (tx *Transaction) SetTxId() {
 }
 
 //创建挖矿交易
-const reward = 12.5
+const reward = 50
 func NewCoinBase(address, data string) *Transaction {
 	//挖矿交易没有input，只有output
 	//比特币系统，对于这个input的id填0，对索引填0xffff，data由矿工填写，一般填所在矿池的名字
@@ -76,12 +76,15 @@ func (output *TxOutput) PayBy(unlockData string) bool {
 //判断是否为挖矿交易
 func (tx *Transaction) IsCoinBase() bool {
 	//挖矿交易没有input
-	if len(tx.Inputs) == 1 {
-		//2. 交易id为空
-		//3. 交易的index 为 -1
-		if len(tx.TxId)==0 && tx.Inputs[0].PayIndex == -1  {
-			return true
-		}
+	//if len(tx.Inputs) == 1 {
+	//	//2. 交易id为空
+	//	//3. 交易的index 为 -1
+	//	if len(tx.Inputs[0].Txid)==0 && tx.Inputs[0].PayIndex == -1  {
+	//		return true
+	//	}
+	//}
+	if len(tx.Inputs) == 1 && len(tx.Inputs[0].Txid) == 0 && tx.Inputs[0].PayIndex == -1 {
+		return true
 	}
 	return false
 }
@@ -109,17 +112,20 @@ func NewTransaction(from, to string, amount float64, bc *BlockChain) *Transactio
      	inputs=append(inputs,&input)
 	 }
 	}
+	fmt.Println("the intput :",inputs[0].ScriptSig)
    //创建output
    output:=TxOutput{amount,to}
   outputs=append(outputs,&output)
    //找零
    if total>amount{
    	//output=TxOutput{total-amount,from}
-   	//此处有个坑，这里不可以重新给output赋值
+   	//这里不可以重新给output赋值
    	outputs=append(outputs,&TxOutput{total-amount,from})
    }
-   fmt.Println("amount:",amount)
+
+   //fmt.Println("amount:",amount)
    transation:=Transaction{[]byte{},inputs,outputs}
+   fmt.Println(transation.Outputs[0].ReValue)
    transation.SetTxId()
    return &transation
 }
